@@ -98,10 +98,10 @@ public abstract class ManagedSocket {
 			long time = Long.parseLong(inputAccumulator.substring(inputAccumulator.indexOf(",") + 1));
 			int diff = (int) (System.currentTimeMillis() - time);
 			addValueToPingHistory(diff);
-		}
-
-		synchronized (outputBuffer) {
-			outputBuffer.add(inputAccumulator);
+		} else {
+			synchronized (outputBuffer) {
+				outputBuffer.add(inputAccumulator);
+			}
 		}
 		inputAccumulator = "";
 	}

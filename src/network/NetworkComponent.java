@@ -141,11 +141,10 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	private boolean isSendable(String string) {
-		if (string.contains(",") || string.contains(";") || string.contains("__")) {
+		if (string == null) {
 			return false;
 		}
-
-		if (string.isEmpty()) {
+		if (string.contains(",") || string.contains(";") || string.contains("__")) {
 			return false;
 		}
 		return true;
@@ -157,7 +156,7 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 
 			synchronized (outgoingData) {
 				for (String curName : outgoingData.keySet()) {
-					managedSocket.addOutgoingValue(curName + "," + outgoingData.get(curName));
+					managedSocket.addOutgoingValue("`" + curName + "`,`" + outgoingData.get(curName) + "`");
 				}
 			}
 
@@ -180,6 +179,9 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 				String[] splitString = incoming.split(",");
 				String name = splitString[0];
 				String value = splitString[1];
+
+				name = name.substring(name.indexOf("`") + 1, name.lastIndexOf("`"));
+				value = value.substring(value.indexOf("`") + 1, value.lastIndexOf("`"));
 
 				synchronized (incomingData) {
 					if (!value.equals(incomingData.get(name))) {
