@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * @author Nicholas Contreras
@@ -45,14 +42,26 @@ public abstract class ManagedSocket {
 		String stringRead = "";
 		try {
 			while (true) {
-				int charRead = socketReader.read();
-				if (charRead == -1) {
-					System.err.println("EOF read from socket, the connection has been lost");
-					connected = false;
-				} else if (charRead == ';') {
-					break;
+				if (this.connected) {
+					int charRead = socketReader.read();
+					if (charRead == -1) {
+						System.err.println("EOF read from socket, the connection has been lost");
+						connected = false;
+					} else if (charRead == ';') {
+						break;
+					} else {
+						stringRead += (char) charRead;
+					}
 				} else {
-					stringRead += (char) charRead;
+					if (!this.connecting) {
+						this.startConnecting();
+					} else {
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
 				}
 			}
 		} catch (IOException e) {
@@ -82,7 +91,7 @@ public abstract class ManagedSocket {
 	void forceDisconnect() {
 		this.connected = false;
 	}
-	
+
 	private void startConnecting() {
 		this.connecting = true;
 		this.attemptToConnect();
