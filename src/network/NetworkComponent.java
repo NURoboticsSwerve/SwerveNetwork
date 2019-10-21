@@ -136,15 +136,11 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 		return incomingData.containsKey(name);
 	}
 
-	public int getPing() {
-		return managedSocket.getPing();
-	}
-
 	private boolean isSendable(String string) {
 		if (string == null) {
 			return false;
 		}
-		if (string.contains(",") || string.contains(";") || string.contains("__")) {
+		if (string.contains("`") || string.contains(",") || string.contains(";") || string.contains("__")) {
 			return false;
 		}
 		return true;
@@ -156,7 +152,7 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 
 			synchronized (outgoingData) {
 				for (String curName : outgoingData.keySet()) {
-					managedSocket.addOutgoingValue("`" + curName + "`,`" + outgoingData.get(curName) + "`");
+					managedSocket.write("`" + curName + "`,`" + outgoingData.get(curName) + "`");
 				}
 			}
 
@@ -174,12 +170,16 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 
 	private void readIncomingData() {
 		while (true) {
-			if (managedSocket.hasNextIncomingValue()) {
-				String incoming = managedSocket.getNextIncomingValue();
-				String[] splitString = incoming.split(",");
-				String name = splitString[0];
-				String value = splitString[1];
+			String incoming = managedSocket.read();
+			String[] splitString = incoming.split(",");
+			String name = splitString[0];
+			String value = splitString[1];
 
+			if (name.equals("__ping__")) {
+				respondToPingRequest(value);
+			} else if (name.equals("__pong__")) {
+				updatePingHistory(value);
+			} else {
 				name = name.substring(name.indexOf("`") + 1, name.lastIndexOf("`"));
 				value = value.substring(value.indexOf("`") + 1, value.lastIndexOf("`"));
 
@@ -192,6 +192,14 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 			}
 			Thread.yield();
 		}
+	}
+
+	private void respondToPingRequest(String valueRecieved) {
+		
+	}
+
+	private void updatePingHistory(String valueRecieved) {
+
 	}
 
 	private void runCallbacksFor(String name) {
