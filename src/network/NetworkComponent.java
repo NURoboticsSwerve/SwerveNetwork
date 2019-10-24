@@ -362,6 +362,17 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
+	 * Returns a boolean indicating whether the underlying socket is currently
+	 * successfully connected to the remote socket.
+	 * 
+	 * @return <tt> true </tt> if this NetworkComponent is connected,
+	 *         <tt> false </tt> otherwise.
+	 */
+	public boolean isConnected() {
+		return this.managedSocket.isConnected();
+	}
+
+	/**
 	 * Gets the network ping time for the connection between this
 	 * NetworkComponent and the remote. Note that this ping time measures the
 	 * speed of the underlying connection to the remote device, and does not
