@@ -1,5 +1,6 @@
 package network;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -29,22 +30,27 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	private final HashMap<String, String> incomingData;
 
 	private final HashMap<String, HashMap<String, NetworkCallback>> callbacks;
-	private final Timer callbackTimer;
+	private final Timer timer;
 
 	private T managedSocket;
 
 	private int sendFrequency;
+
+	private ArrayList<Integer> pingHistory;
 
 	NetworkComponent(T defaultManagedSocket, int sendFrequency) {
 		outgoingData = new HashMap<String, String>();
 		incomingData = new HashMap<String, String>();
 
 		callbacks = new HashMap<String, HashMap<String, NetworkCallback>>();
-		callbackTimer = new Timer(true);
+		timer = new Timer(true);
 
 		managedSocket = defaultManagedSocket;
 
 		this.sendFrequency = sendFrequency;
+
+		pingHistory = new ArrayList<Integer>();
+		pingHistory.add(0);
 
 		Thread outgoingThread = new Thread(() -> writeOutgoingData(), "Outgoing-NetworkComponent-Thread");
 		outgoingThread.setDaemon(true);
@@ -53,6 +59,15 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 		Thread incomingThread = new Thread(() -> readIncomingData(), "Incoming-NetworkComponent-Thread");
 		incomingThread.setDaemon(true);
 		incomingThread.start();
+
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (managedSocket.isConnected()) {
+					managedSocket.write("__ping__," + System.currentTimeMillis());
+				}
+			}
+		}, 0, 1000);
 	}
 
 	/**
@@ -334,18 +349,42 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	private void respondToPingRequest(String valueRecieved) {
-
+		managedSocket.write("__pong__," + valueRecieved);
 	}
 
 	private void updatePingHistory(String valueRecieved) {
+		int pingTime = (int) (System.currentTimeMillis() - Long.parseLong(valueRecieved));
+		this.pingHistory.add(pingTime);
 
+		if (this.pingHistory.size() > 10) {
+			this.pingHistory.remove(0);
+		}
+	}
+
+	/**
+	 * Gets the network ping time for the connection between this
+	 * NetworkComponent and the remote. Note that this ping time measures the
+	 * speed of the underlying connection to the remote device, and does not
+	 * account for the fact that a NetworkComponent may cache values for some
+	 * time before transmitting them. More formally, this time is the lower
+	 * bound on the delay between this NetworkComponent receiving an updated
+	 * value, and the remote NetworkComponent receiving that value.
+	 * 
+	 * @return The ping time (in milliseconds).
+	 */
+	public int getPingTime() {
+		int pingTime = 0;
+		for (int i = 0; i < this.pingHistory.size(); i++) {
+			pingTime += this.pingHistory.get(i);
+		}
+		return pingTime / this.pingHistory.size();
 	}
 
 	private void runCallbacksFor(String name) {
 		synchronized (callbacks) {
 			if (callbacks.containsKey(name)) {
 				for (String curCallbackName : callbacks.get(name).keySet()) {
-					callbackTimer.schedule(new TimerTask() {
+					timer.schedule(new TimerTask() {
 						@Override
 						public void run() {
 							callbacks.get(name).get(curCallbackName).valueChanged();

@@ -9,7 +9,7 @@ import java.net.Socket;
  * @author Nicholas Contreras
  */
 
-public abstract class ManagedSocket {
+abstract class ManagedSocket {
 
 	private Socket socket;
 	private OutputStreamWriter socketWriter;
@@ -17,10 +17,6 @@ public abstract class ManagedSocket {
 
 	private boolean connecting;
 	private boolean connected;
-
-	ManagedSocket() {
-		attemptToConnect();
-	}
 
 	void write(String data) {
 		if (connected) {
