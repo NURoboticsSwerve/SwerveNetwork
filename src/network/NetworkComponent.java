@@ -73,10 +73,12 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	/**
 	 * Sets the frequency that this NetworkComponent should update it's partner
 	 * with the most up-to-date values. A lower frequency will reduce load on
-	 * both the device and the network, but may result in data being less
-	 * precise. More formally, the maximum amount of time between this component
-	 * being told a value has changed and it sending that change on the network
-	 * is (1 / sendFrequency) seconds.
+	 * both the device and the network, but will also increase the time
+	 * between this NetworkComponent recieving an updated value, and the remote
+	 * NetworkComponent being updated with that value. More formally, the 
+	 * maximum amount of time between this component being told a value has 
+	 * changed and it sending that change on the network is (1 / sendFrequency) 
+	 * seconds.
 	 * 
 	 * @param sendFrequency
 	 *            The number of times to transmit the most up-to-date values to
