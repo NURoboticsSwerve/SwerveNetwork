@@ -113,8 +113,11 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 *            A unique name to access the value on the remote device.
 	 * @param value
 	 *            The value to be sent.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             If the name or value is not of sendable form.
 	 */
-	public void writeString(String name, String value) {
+	public void writeString(String name, String value) throws IllegalArgumentException {
 		writeData(name, value);
 	}
 
@@ -127,8 +130,11 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 *            A unique name to access the value on the remote device.
 	 * @param value
 	 *            The value to be sent.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             If the name or value is not of sendable form.
 	 */
-	public void writeInt(String name, int value) {
+	public void writeInt(String name, int value) throws IllegalArgumentException {
 		writeData(name, value + "");
 	}
 
@@ -141,12 +147,15 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 *            A unique name to access the value on the remote device.
 	 * @param value
 	 *            The value to be sent.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             If the name or value is not of sendable form.
 	 */
-	public void writeDouble(String name, double value) {
+	public void writeDouble(String name, double value) throws IllegalArgumentException {
 		writeData(name, value + "");
 	}
 
-	private void writeData(String name, String value) {
+	private void writeData(String name, String value) throws IllegalArgumentException {
 
 		if (!isSendable(name)) {
 			throw new IllegalArgumentException("The name " + name + " is not sendable");
@@ -167,10 +176,12 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * @param name
 	 *            The name of the value to be read.
 	 * 
-	 * @return The string value for the given name, or null if the value does
-	 *         not exist.
+	 * @return The string value for the given name.
+	 * 
+	 * @throws ValueNotFoundException
+	 *             If no value exists for the given name.
 	 */
-	public String readString(String name) {
+	public String readString(String name) throws ValueNotFoundException {
 		return readData(name);
 	}
 
@@ -181,21 +192,18 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * @param name
 	 *            The name of the value to be read.
 	 * 
-	 * @return The integer value for the given name, or null if the value does
-	 *         not exist.
+	 * @return The integer value for the given name.
 	 * 
+	 * @throws ValueNotFoundException
+	 *             If no value exists for the given name.
 	 * @throws NumberFormatException
 	 *             If the value for the given name exists but cannot be
 	 *             represented as an integer.
 	 */
-	public int readInt(String name) {
-		if (!hasValue(name)) {
-			return 0;
-		}
-
+	public int readInt(String name) throws ValueNotFoundException {
 		try {
 			return Integer.parseInt(readData(name));
-		} catch (NumberFormatException | NullPointerException e) {
+		} catch (NumberFormatException e) {
 			throw new NumberFormatException("Cannot determine the integer value of data: " + readData(name));
 		}
 	}
@@ -207,18 +215,15 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * @param name
 	 *            The name of the value to be read.
 	 * 
-	 * @return The double value for the given name, or null if the value does
-	 *         not exist.
+	 * @return The double value for the given name.
 	 * 
+	 * @throws ValueNotFoundException
+	 *             If no value exists for the given name.
 	 * @throws NumberFormatException
 	 *             If the value for the given name exists but cannot be
 	 *             represented as an double.
 	 */
-	public double readDouble(String name) {
-		if (!hasValue(name)) {
-			return 0;
-		}
-
+	public double readDouble(String name) throws ValueNotFoundException, NumberFormatException {
 		try {
 			return Double.parseDouble(readData(name));
 		} catch (NumberFormatException | NullPointerException e) {
@@ -226,7 +231,12 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 		}
 	}
 
-	private String readData(String name) {
+	private String readData(String name) throws ValueNotFoundException {
+
+		if (!hasValue(name)) {
+			throw new ValueNotFoundException("No value for the give key: " + name);
+		}
+
 		synchronized (incomingData) {
 			return incomingData.get(name);
 		}
@@ -289,13 +299,16 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 *         has not received such a value.
 	 */
 	public boolean hasValue(String name) {
-		return incomingData.containsKey(name);
+		synchronized (incomingData) {
+			return incomingData.containsKey(name);
+		}
 	}
 
 	private boolean isSendable(String string) {
-		if (string == null) {
+		if (string == null || string.isEmpty()) {
 			return false;
 		}
+
 		if (string.contains("`") || string.contains(",") || string.contains(";") || string.contains("__")) {
 			return false;
 		}
