@@ -71,18 +71,16 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
-	 * Sets the frequency that this NetworkComponent should update it's partner
-	 * with the most up-to-date values. A lower frequency will reduce load on
-	 * both the device and the network, but will also increase the time between
-	 * this NetworkComponent receiving an updated value, and the remote
-	 * NetworkComponent being updated with that value. More formally, the
-	 * maximum amount of time between this component being told a value has
-	 * changed and it sending that change on the network is (1 / sendFrequency)
-	 * seconds.
+	 * Sets the frequency that this NetworkComponent should update it's partner with
+	 * the most up-to-date values. A lower frequency will reduce load on both the
+	 * device and the network, but will also increase the time between this
+	 * NetworkComponent receiving an updated value, and the remote NetworkComponent
+	 * being updated with that value. More formally, the maximum amount of time
+	 * between this component being told a value has changed and it sending that
+	 * change on the network is (1 / sendFrequency) seconds.
 	 * 
-	 * @param sendFrequency
-	 *            The number of times to transmit the most up-to-date values to
-	 *            the network, in transmissions per second.
+	 * @param sendFrequency The number of times to transmit the most up-to-date
+	 *                      values to the network, in transmissions per second.
 	 */
 	public void setSendFrequency(int sendFrequency) {
 		this.sendFrequency = sendFrequency;
@@ -105,17 +103,14 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
-	 * Writes a string value with the given name to this NetworkComponent. The
-	 * value is sent under the name given to the remote device during the next
+	 * Writes a string value with the given name to this NetworkComponent. The value
+	 * is sent under the name given to the remote device during the next
 	 * transmission.
 	 * 
-	 * @param name
-	 *            A unique name to access the value on the remote device.
-	 * @param value
-	 *            The value to be sent.
+	 * @param name  A unique name to access the value on the remote device.
+	 * @param value The value to be sent.
 	 * 
-	 * @throws IllegalArgumentException
-	 *             If the name or value is not of sendable form.
+	 * @throws IllegalArgumentException If the name or value is invalid.
 	 */
 	public void writeString(String name, String value) throws IllegalArgumentException {
 		writeData(name, value);
@@ -126,30 +121,24 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * value is sent under the name given to the remote device during the next
 	 * transmission.
 	 * 
-	 * @param name
-	 *            A unique name to access the value on the remote device.
-	 * @param value
-	 *            The value to be sent.
+	 * @param name  A unique name to access the value on the remote device.
+	 * @param value The value to be sent.
 	 * 
-	 * @throws IllegalArgumentException
-	 *             If the name or value is not of sendable form.
+	 * @throws IllegalArgumentException If the name or value is invalid.
 	 */
 	public void writeInt(String name, int value) throws IllegalArgumentException {
 		writeData(name, value + "");
 	}
 
 	/**
-	 * Writes a double value with the given name to this NetworkComponent. The
-	 * value is sent under the name given to the remote device during the next
+	 * Writes a double value with the given name to this NetworkComponent. The value
+	 * is sent under the name given to the remote device during the next
 	 * transmission.
 	 * 
-	 * @param name
-	 *            A unique name to access the value on the remote device.
-	 * @param value
-	 *            The value to be sent.
+	 * @param name  A unique name to access the value on the remote device.
+	 * @param value The value to be sent.
 	 * 
-	 * @throws IllegalArgumentException
-	 *             If the name or value is not of sendable form.
+	 * @throws IllegalArgumentException If the name or value is invalid.
 	 */
 	public void writeDouble(String name, double value) throws IllegalArgumentException {
 		writeData(name, value + "");
@@ -157,11 +146,11 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 
 	private void writeData(String name, String value) throws IllegalArgumentException {
 
-		if (!isSendable(name)) {
-			throw new IllegalArgumentException("The name " + name + " is not sendable");
+		if (!isValidName(name)) {
+			throw new IllegalArgumentException("The name '" + name + "' is not valid");
 		}
-		if (!isSendable(value)) {
-			throw new IllegalArgumentException("The value " + value + " is not sendable");
+		if (!isValidValue(value)) {
+			throw new IllegalArgumentException("The value '" + value + "' is not valid");
 		}
 
 		synchronized (outgoingData) {
@@ -169,17 +158,37 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 		}
 	}
 
+	private boolean isValidName(String name) {
+		if (name == null || name.isEmpty()) {
+			return false;
+		}
+
+		if (name.contains("`") || name.contains(",") || name.contains(";") || name.contains("__")) {
+			return false;
+		}
+		return true;
+	}
+
+	private boolean isValidValue(String value) {
+		if (value == null) {
+			return false;
+		}
+
+		if (value.contains("`") || value.contains(",") || value.contains(";") || value.contains("__")) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * Reads the string form of the value for the given name received from the
 	 * remote device.
 	 * 
-	 * @param name
-	 *            The name of the value to be read.
+	 * @param name The name of the value to be read.
 	 * 
 	 * @return The string value for the given name.
 	 * 
-	 * @throws ValueNotFoundException
-	 *             If no value exists for the given name.
+	 * @throws ValueNotFoundException If no value exists for the given name.
 	 */
 	public String readString(String name) throws ValueNotFoundException {
 		return readData(name);
@@ -189,16 +198,13 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * Reads the integer form of the value for the given name received from the
 	 * remote device.
 	 * 
-	 * @param name
-	 *            The name of the value to be read.
+	 * @param name The name of the value to be read.
 	 * 
 	 * @return The integer value for the given name.
 	 * 
-	 * @throws ValueNotFoundException
-	 *             If no value exists for the given name.
-	 * @throws NumberFormatException
-	 *             If the value for the given name exists but cannot be
-	 *             represented as an integer.
+	 * @throws ValueNotFoundException If no value exists for the given name.
+	 * @throws NumberFormatException  If the value for the given name exists but
+	 *                                cannot be represented as an integer.
 	 */
 	public int readInt(String name) throws ValueNotFoundException {
 		try {
@@ -212,16 +218,13 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	 * Reads the double form of the value for the given name received from the
 	 * remote device.
 	 * 
-	 * @param name
-	 *            The name of the value to be read.
+	 * @param name The name of the value to be read.
 	 * 
 	 * @return The double value for the given name.
 	 * 
-	 * @throws ValueNotFoundException
-	 *             If no value exists for the given name.
-	 * @throws NumberFormatException
-	 *             If the value for the given name exists but cannot be
-	 *             represented as an double.
+	 * @throws ValueNotFoundException If no value exists for the given name.
+	 * @throws NumberFormatException  If the value for the given name exists but
+	 *                                cannot be represented as an double.
 	 */
 	public double readDouble(String name) throws ValueNotFoundException, NumberFormatException {
 		try {
@@ -244,20 +247,23 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 
 	/**
 	 * Adds a value monitor to this NetworkComponent. A value monitor is a
-	 * functional interface which allows the user to specify a procedure to be
-	 * run when this NetworkComponent receives a change in the value for the
-	 * name given.
+	 * functional interface which allows the user to specify a procedure to be run
+	 * when this NetworkComponent receives a change in the value for the name given.
 	 * 
-	 * @param valueName
-	 *            The name of the value to track and report changes for.
-	 * @param callbackName
-	 *            A unique name for the value monitor, used to remove value
-	 *            monitors.
-	 * @param callback
-	 *            An implementation of a functional interface specifying the
-	 *            procedure to run for this callback.
+	 * @param valueName    The name of the value to track and report changes for.
+	 * @param callbackName A unique name for the value monitor, used to remove value
+	 *                     monitors.
+	 * @param callback     An implementation of a functional interface specifying
+	 *                     the procedure to run for this callback.
+	 * 
+	 * @throws IllegalArgumentException If the given value name is invalid.
 	 */
 	public void addValueMonitor(String valueName, String callbackName, NetworkCallback callback) {
+
+		if (!isValidName(valueName)) {
+			throw new IllegalArgumentException("The name '" + valueName + "' is not valid");
+		}
+
 		synchronized (callbacks) {
 			if (!callbacks.containsKey(valueName)) {
 				callbacks.put(valueName, new HashMap<String, NetworkCallback>());
@@ -268,18 +274,24 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
-	 * Removes the value monitor of the given name for the given value name. If
-	 * a value monitor on the given value with the given name does not exist,
-	 * this method does nothing.
+	 * Removes the value monitor of the given name for the given value name. If a
+	 * value monitor on the given value with the given name does not exist, this
+	 * method does nothing.
 	 * 
-	 * @param valueName
-	 *            The name of the value being monitored.
-	 * @param callbackName
-	 *            The name of the value monitor itself that will be removed.
+	 * @param valueName    The name of the value being monitored.
+	 * @param callbackName The name of the value monitor itself that will be
+	 *                     removed.
+	 * 
+	 * @throws IllegalArgumentException If the given value name is invalid.
 	 * 
 	 * @see #addValueMonitor(String, String, NetworkCallback)
 	 */
 	public void removeValueMonitor(String valueName, String callbackName) {
+
+		if (!isValidName(valueName)) {
+			throw new IllegalArgumentException("The name '" + valueName + "' is not valid");
+		}
+
 		synchronized (callbacks) {
 			if (!callbacks.containsKey(valueName)) {
 				callbacks.put(valueName, new HashMap<String, NetworkCallback>());
@@ -290,29 +302,24 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
-	 * Determines if this NetworkClient has received and saved a value for the
-	 * name given
+	 * Determines if this NetworkClient has received and saved a value for the name
+	 * given
 	 * 
-	 * @param name
-	 *            The name of the value to check for.
-	 * @return <tt>true</tt> if the name has a value saved, <tt>false</tt> if it
-	 *         has not received such a value.
+	 * @param name The name of the value to check for.
+	 * @return <tt>true</tt> if the name has a value saved, <tt>false</tt> if it has
+	 *         not received such a value.
+	 * 
+	 * @throws IllegalArgumentException If the given name is invalid.
 	 */
 	public boolean hasValue(String name) {
+
+		if (!isValidName(name)) {
+			throw new IllegalArgumentException("The name '" + name + "' is not valid");
+		}
+
 		synchronized (incomingData) {
 			return incomingData.containsKey(name);
 		}
-	}
-
-	private boolean isSendable(String string) {
-		if (string == null || string.isEmpty()) {
-			return false;
-		}
-
-		if (string.contains("`") || string.contains(",") || string.contains(";") || string.contains("__")) {
-			return false;
-		}
-		return true;
 	}
 
 	private void writeOutgoingData() {
@@ -341,21 +348,23 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 		while (true) {
 			String incoming = managedSocket.read();
 			String[] splitString = incoming.split(",");
-			String name = splitString[0];
-			String value = splitString[1];
+			if (splitString.length == 2) {
+				String name = splitString[0];
+				String value = splitString[1];
 
-			if (name.equals("__ping__")) {
-				respondToPingRequest(value);
-			} else if (name.equals("__pong__")) {
-				updatePingHistory(value);
-			} else {
-				name = name.substring(name.indexOf("`") + 1, name.lastIndexOf("`"));
-				value = value.substring(value.indexOf("`") + 1, value.lastIndexOf("`"));
+				if (name.equals("__ping__")) {
+					respondToPingRequest(value);
+				} else if (name.equals("__pong__")) {
+					updatePingHistory(value);
+				} else {
+					name = name.substring(name.indexOf("`") + 1, name.lastIndexOf("`"));
+					value = value.substring(value.indexOf("`") + 1, value.lastIndexOf("`"));
 
-				synchronized (incomingData) {
-					if (!value.equals(incomingData.get(name))) {
-						incomingData.put(name, value);
-						runCallbacksFor(name);
+					synchronized (incomingData) {
+						if (!value.equals(incomingData.get(name))) {
+							incomingData.put(name, value);
+							runCallbacksFor(name);
+						}
 					}
 				}
 			}
@@ -388,13 +397,13 @@ abstract class NetworkComponent<T extends ManagedSocket> {
 	}
 
 	/**
-	 * Gets the network ping time for the connection between this
-	 * NetworkComponent and the remote. Note that this ping time measures the
-	 * speed of the underlying connection to the remote device, and does not
-	 * account for the fact that a NetworkComponent may cache values for some
-	 * time before transmitting them. More formally, this time is the lower
-	 * bound on the delay between this NetworkComponent receiving an updated
-	 * value, and the remote NetworkComponent receiving that value.
+	 * Gets the network ping time for the connection between this NetworkComponent
+	 * and the remote. Note that this ping time measures the speed of the underlying
+	 * connection to the remote device, and does not account for the fact that a
+	 * NetworkComponent may cache values for some time before transmitting them.
+	 * More formally, this time is the lower bound on the delay between this
+	 * NetworkComponent receiving an updated value, and the remote NetworkComponent
+	 * receiving that value.
 	 * 
 	 * @return The ping time (in milliseconds).
 	 */
