@@ -78,6 +78,7 @@ abstract class ManagedSocket {
 		}
 
 		this.socket = socket;
+		this.socket.setSoTimeout(2500);
 		this.socketWriter = new OutputStreamWriter(socket.getOutputStream());
 		this.socketReader = new InputStreamReader(socket.getInputStream());
 
